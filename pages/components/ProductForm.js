@@ -9,6 +9,7 @@ import {
   Thumbnail,
 } from '@shopify/polaris';
 import { Context } from '@shopify/app-bridge-react';
+import DropZone from "./DropZone";
 
 // GraphQL query that retrieves products by ID
 const GET_PRODUCTS_BY_ID = gql`
@@ -26,6 +27,10 @@ const GET_PRODUCTS_BY_ID = gql`
               altText
             }
           }
+        }
+        metafield(key: "audio", namespace: "my_fields") {
+          id
+          value
         }
         variants(first: 1) {
           edges {
@@ -131,7 +136,7 @@ class ProductForm extends React.Component {
                             </h3>
                           </Stack.Item>
                           <Stack.Item>
-                            <p>${price}</p>
+                            <DropZone collectionId={item.id} metafieldId={item.metafield && item.metafield.id} />
                           </Stack.Item>
                         </Stack>
                       </ResourceList.Item>
