@@ -1,0 +1,159 @@
+<script>
+  class Waveform {
+    constructor(name, url) {
+      this.name = name;
+      this.url = url;
+    }
+    r(e) {
+      const hw = document.createElement("div");
+      hw.style.display = "flex";
+      hw.style.width = "100%";
+      hw.style.maxWidth = "100%";
+      hw.style.marginTop = "0px";
+      hw.style.flexDirection = "column";
+      e.appendChild(hw);
+      const wrap = document.createElement("div");
+      wrap.style.display = "flex";
+      wrap.style.flexDirection = "row-reverse";
+      wrap.style.width = "100%";
+      wrap.style.height = "14px";
+      hw.appendChild(wrap);
+      const d = document.createElement("div");
+      d.style.maxWidth = "100%";
+      d.style.width = "100%";
+      d.style.textAlign = "center";
+      d.style.marginTop = "5px";
+      d.style.color = "#ffffff";
+      wrap.appendChild(d);
+      const wavesurfer = WaveSurfer.create({
+        container: d,
+        waveColor: "#3a3a3a",
+        progressColor: "black",
+        height: 24,
+        normalize: true,
+        responsive: true,
+        backend: "MediaElement",
+        hideScrollbar: true,
+        cursorWidth: 0,
+      });
+      const t = document.createElement("p");
+      t.style.width = "100%";
+      t.style.display = "inline";
+      t.style.textAlign = "center";
+      t.innerHTML = this.name;
+      t.style.marginTop = "25px";
+      t.style.fontSize = "14px";
+      t.style.fontWeight = "regular";
+      t.style.color = "#3a3a3a";
+      const b = document.createElement("p");
+      b.style.width = "100%";
+      b.style.cursor = 'pointer'
+      b.style.maxWidth = "24px";
+      b.style.display = "inline";
+      b.style.marginRight = "5px";
+      b.style.marginTop = "5px";
+      b.classList.add("material-icons");
+      b.innerHTML = "play_arrow";
+      b.style.color = "#3a3a3a";
+      wavesurfer.on("ready", () => {
+        wrap.appendChild(b);
+        hw.appendChild(t);
+        wavesurfer.drawer.containerWidth = wavesurfer.drawer.container.clientWidth;
+        wavesurfer.drawBuffer();
+      });
+      return {
+        btn: b,
+        worker: wavesurfer
+      };
+    }
+    h(e) {
+      const worker = this.r(e);
+      worker.worker.load(this.url);
+      return worker;
+    }
+  }
+
+  const init = (element,names, urls) => {
+    const icons = document.createElement("link");
+    icons.href = "https://fonts.googleapis.com/icon?family=Material+Icons";
+    icons.rel = "stylesheet";
+    document.head.appendChild(icons);
+    const ws = document.createElement("script");
+    ws.src = "https://unpkg.com/wavesurfer.js";
+    document.body.appendChild(ws);
+
+    ws.onload = function() {
+      renderDeck(element,names, urls);
+    };
+  };
+  const renderDeck = (element,names, urls) => {
+    let choosen = {
+      button: null,
+      handler: null
+    };
+    const deckWrapper = document.querySelector(`.${element}`)
+    for (let i = 0; i < names.length; i++) {
+      let wave = new Waveform(names[i], urls[i]);
+      let waveCtrl = wave.h(deckWrapper);
+      waveCtrl.worker.on("ready", function() {
+        waveCtrl.btn.addEventListener("click", function() {
+          if (waveCtrl.btn.innerHTML === "play_arrow") {
+            if (choosen.handler === null) {
+              choosen.handler = waveCtrl.worker;
+              choosen.button = waveCtrl.btn;
+              if (choosen.button.innerHTML === "play_arrow") {
+                choosen.handler.play();
+                choosen.button.innerHTML = "stop";
+              } else if (choosen.button.innerHTML === "stop") {
+                choosen.handler.stop();
+                choosen.button.innerHTML = "play_arrow";
+              }
+            } else {
+              choosen.handler.stop();
+              choosen.button.innerHTML = "play_arrow";
+              choosen.handler = waveCtrl.worker;
+              choosen.button = waveCtrl.btn;
+              if (choosen.button.innerHTML === "play_arrow") {
+                choosen.handler.play();
+                choosen.button.innerHTML = "stop";
+              } else if (choosen.button.innerHTML === "stop") {
+                choosen.handler.stop();
+                choosen.button.innerHTML = "play_arrow";
+              }
+            }
+          }else if(waveCtrl.btn.innerHTML === "stop" && choosen.handler === waveCtrl.worker){
+            choosen.handler.stop();
+            choosen.button.innerHTML = 'play_arrow'
+            choosen.handler = null
+            choosen.button = null
+          }
+        });
+      });
+    }
+  };
+
+  const samples = JSON.parse('{{ product.metafields.my_fields.audio }}');
+
+  if (samples && Array.isArray(samples) && samples.length > 0) {
+    const sampleNameList = samples.map(sample => 'haha');
+    const sampleLinkList = samples.map(sample => sample.url);
+    init('samples', sampleNameList, sampleLinkList);
+  }
+
+</script>
+
+<span class="samples" style="display: grid;grid-template-columns: 1fr 1fr;padding-top: 30px;direction: ltr; width: 100%;grid-gap: 20px">
+</span>
+
+{% schema %}
+  {
+    "name": "Hello World",
+    "templates": ["product"],
+    "target": "section",
+    "stylesheet": "app.css",
+    "javascript": "app.js",
+    "settings": [
+      { "label": "Color", "id": "color", "type": "color", "default": "#000000" }
+    ]
+  }
+{% endschema %}
