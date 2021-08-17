@@ -1,28 +1,19 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {DropZone as PolarisDropzone, Stack} from "@shopify/polaris";
 import {useCallback, useState} from "react";
-import {useMutation} from "react-apollo";
-import gql from "graphql-tag";
 import * as fileStack from 'filestack-js';
+import AudioForm from "./AudioForm";
 
 const filestackClient = fileStack.init('AVFtohaytT4qYBZiDilhgz');
 
-const UPDATE_METAFIELDS = gql`
-  mutation productUpdate($input: ProductInput!) {
-    productUpdate(input: $input) {
-      product {
-        id
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`;
-
-export default function DropZone({collectionId, metafieldId}) {
+export default function DropZone({collectionId, metafield}) {
   const [files, setFiles] = useState([]);
+
+  useEffect(() => {
+    if (metafield) {
+      setFiles(JSON.parse(metafield.value))
+    }
+  }, [metafield])
 
   const handleDropZoneDrop = useCallback(
     (_dropFiles, acceptedFiles, _rejectedFiles) =>
@@ -30,43 +21,25 @@ export default function DropZone({collectionId, metafieldId}) {
     [],
   );
 
-  const [productUpdate] = useMutation(UPDATE_METAFIELDS)
+  async function uploadFile(newFiles) {
+    const res = await filestackClient.upload(newFiles[0]);
 
-  async function uploadFile(files) {
-    const res = await filestackClient.upload(files[0]);
+    const newFile = { id: res.handle, title: '', url: res.url};
 
-    const anotherRes = await productUpdate({ variables: {
-        "input": {
-          "id": collectionId,
-          "metafields": [
-            {
-              "id": metafieldId,
-              "value": JSON.stringify({"url": res.url})
-            }
-          ]
-        }
-      }
-    })
-    setFiles([{ url: res.url }])
+    setFiles([...files, newFile]);
   }
 
-  const fileUpload = !files.length && <PolarisDropzone.FileUpload allowMultiple={false} />;
-  const uploadedFiles = files.length > 0 && (
-    <Stack vertical>
-      {files.map((file, index) => (
-        <Stack alignment="center" key={index}>
-          <div>
-            {file.url}
-          </div>
-        </Stack>
-      ))}
-    </Stack>
-  );
-
   return (
-    <PolarisDropzone onDrop={handleDropZoneDrop}>
-      {uploadedFiles}
-      {fileUpload}
-    </PolarisDropzone>
+    <Stack vertical>
+      <PolarisDropzone onDrop={handleDropZoneDrop}>
+        <PolarisDropzone.FileUpload allowMultiple={false} />
+      </PolarisDropzone>
+
+      <AudioForm
+        collectionId={collectionId}
+        metafieldId={metafield.id}
+        files={files}
+      />
+    </Stack>
   );
 }

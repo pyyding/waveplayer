@@ -136,7 +136,7 @@ class ProductForm extends React.Component {
                             </h3>
                           </Stack.Item>
                           <Stack.Item>
-                            <DropZone collectionId={item.id} metafieldId={item.metafield && item.metafield.id} />
+                            <DropZone collectionId={item.id} metafield={item.metafield} />
                           </Stack.Item>
                         </Stack>
                       </ResourceList.Item>
