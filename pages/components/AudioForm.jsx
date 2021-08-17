@@ -20,15 +20,18 @@ const UPDATE_METAFIELDS = gql`
 
 function AudioForm({ files: initFiles, collectionId, metafieldId }) {
   const [metaFieldValue, setMetafieldValue] = useState([]);
+  const [toDeleteIds, setToDeleteIds] = useState([]);
 
   const [productUpdate] = useMutation(UPDATE_METAFIELDS)
 
   useEffect(() => {
     if (initFiles) {
       if (metaFieldValue.length > 0) {
-        const oldFiles = metaFieldValue.filter(oldFile => !!initFiles.find(newFile => newFile.id === oldFile.id))
-        const newFiles = initFiles.filter(file => !metaFieldValue.find(prevFile => prevFile.id === file.id))
-        setMetafieldValue([...oldFiles, ...newFiles])
+        setMetafieldValue(prevState => {
+          const oldFiles = prevState.filter(oldFile => !!initFiles.find(newFile => newFile.id === oldFile.id))
+          const newFiles = initFiles.filter(file => !prevState.find(prevFile => prevFile.id === file.id))
+          return [...oldFiles, ...newFiles]
+        })
       } else {
         setMetafieldValue(initFiles);
       }
@@ -61,6 +64,14 @@ function AudioForm({ files: initFiles, collectionId, metafieldId }) {
         }
       }
     })
+    // todo delete from fileshack but use a hook
+    // const deleteFiles = useDeleteFiles
+    // await deleteFiles(toDeleteIds);
+  }
+
+  function handleDelete(id) {
+    setMetafieldValue(metaFieldValue.filter(file => file.id !== id));
+    setToDeleteIds([...toDeleteIds, id]);
   }
 
   return (
@@ -73,6 +84,7 @@ function AudioForm({ files: initFiles, collectionId, metafieldId }) {
             url={file.url}
             title={file.title}
             onFileChange={handleFileChange}
+            onDelete={handleDelete}
           />
         ))}
         <Button submit>Save</Button>
