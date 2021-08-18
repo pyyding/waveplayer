@@ -1,10 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {Form, FormLayout, TextField, Button} from "@shopify/polaris";
+import {Form, FormLayout, Button} from "@shopify/polaris";
 import gql from "graphql-tag";
 import {useMutation} from "react-apollo";
 import AudioFormItem from "./AudioFormItem";
 
-const UPDATE_METAFIELDS = gql`
+const UPDATE_PRODUCT = gql`
   mutation productUpdate($input: ProductInput!) {
     productUpdate(input: $input) {
       product {
@@ -22,7 +22,7 @@ function AudioForm({ files: initFiles, collectionId, metafieldId }) {
   const [metaFieldValue, setMetafieldValue] = useState([]);
   const [toDeleteIds, setToDeleteIds] = useState([]);
 
-  const [productUpdate] = useMutation(UPDATE_METAFIELDS)
+  const [productUpdate] = useMutation(UPDATE_PRODUCT)
 
   useEffect(() => {
     if (initFiles) {
@@ -51,19 +51,30 @@ function AudioForm({ files: initFiles, collectionId, metafieldId }) {
     setMetafieldValue([...metaFieldValue, newFile])
   }
 
-  async function handleSubmit() {
-    await productUpdate({ variables: {
-        input: {
-          id: collectionId,
-          metafields: [
-            {
-              id: metafieldId,
-              value: JSON.stringify(metaFieldValue)
-            }
-          ]
-        }
+  function getMetafieldPayload(id, value) {
+    if (id) {
+      return {
+        id,
+        value: JSON.stringify(value),
       }
-    })
+    }
+    return {
+      namespace: 'my_fields',
+      key: 'audio',
+      value: JSON.stringify(value),
+      type: 'json',
+    }
+  }
+
+  async function handleSubmit() {
+    const metafieldPayload = getMetafieldPayload(metafieldId, metaFieldValue)
+
+    await productUpdate({ variables: {
+      input : {
+        id: collectionId,
+        metafields: [metafieldPayload]
+      }
+    }})
     // todo delete from fileshack but use a hook
     // const deleteFiles = useDeleteFiles
     // await deleteFiles(toDeleteIds);

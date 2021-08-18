@@ -42,7 +42,7 @@ export default function DropZone({collectionId, metafield}) {
 
       <AudioForm
         collectionId={collectionId}
-        metafieldId={metafield.id}
+        metafieldId={metafield && metafield.id}
         files={files}
       />
     </Stack>
